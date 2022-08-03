@@ -45,8 +45,6 @@ fn main() {
 
     let frame_time = std::time::Duration::from_micros(1000000 / 30);
 
-    let mut last_beat = -100.0;
-
     let mut beat_rolling = 0.0;
     let mut last_beat_num = 0;
 
@@ -55,7 +53,6 @@ fn main() {
 
         let base_volume = frame.info(|info| {
             if info.beat != last_beat_num {
-                last_beat = frame.time;
                 last_beat_num = info.beat;
             }
 
