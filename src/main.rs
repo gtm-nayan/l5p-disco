@@ -1,4 +1,7 @@
-use std::sync::{atomic::AtomicBool, Arc};
+use std::{
+    ops::BitXor,
+    sync::{atomic::AtomicBool, Arc},
+};
 
 use lenovo_legion_hid::get_keyboard;
 use vis_core::analyzer;
@@ -55,19 +58,32 @@ fn main() {
                 last_beat = frame.time;
                 last_beat_num = info.beat;
             }
-            let blue = (beat_rolling * 25.0) as u8;
-            let green = blue / 2;
 
-            let (a, b) = if last_beat_num.rem_euclid(2) == 0 {
-                (1, 2)
-            } else {
-                (2, 1)
-            };
-            keyboard.set_zone_by_index(a, [blue, 0, 0]);
-            keyboard.set_zone_by_index(b, [0, blue, 0]);
-            keyboard.set_zone_by_index(0, [0, green, blue]);
-            keyboard.set_zone_by_index(3, [0, green, blue]);
-            keyboard.refresh();
+            let primary = (beat_rolling * 25.0) as u8;
+            let secondary = primary / 2;
+
+            // Alternate zone 1 and 2 colors on beat
+            let m = (last_beat_num & 1) as u8;
+            let n = m.bitxor(1);
+
+            keyboard.set_colors_to(&[
+                0,
+                secondary,
+                primary,
+                //
+                m * primary,
+                n * primary,
+                0,
+                //
+                n * primary,
+                m * primary,
+                0,
+                //
+                0,
+                secondary,
+                primary,
+            ]);
+
             info.beat_volume
         });
 
