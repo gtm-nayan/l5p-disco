@@ -8,3 +8,8 @@ edition = "2021"
 [dependencies]
 lenovo_legion_hid = { path = "libs/lenovo-legion-hid" }
 vis-core = { path = "libs/visualizer2/vis-core" }
+
+[profile.release]
+lto = true
+opt-level = 3
+codegen-units = 1
