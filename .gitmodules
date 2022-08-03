@@ -1,0 +1,3 @@
+[submodule "libs/lenovo-legion-hid"]
+	path = libs/lenovo-legion-hid
+	url = https://github.com/gtm-nayan/lenovo-legion-hid.git
