@@ -1,0 +1,9 @@
+[audio]
+window = "nuttall"
+conversions = 300
+rate = 8000
+read_size = 256
+recorder = "cpal"
+
+[rgb]
+fps = 30
