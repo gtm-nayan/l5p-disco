@@ -1,3 +1,6 @@
 [submodule "libs/lenovo-legion-hid"]
 	path = libs/lenovo-legion-hid
 	url = https://github.com/gtm-nayan/lenovo-legion-hid.git
+[submodule "libs/visualizer2"]
+	path = libs/visualizer2
+	url = https://github.com/gtm-nayan/visualizer2.git
