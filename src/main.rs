@@ -62,24 +62,16 @@ fn main() {
             // Alternate zone 1 and 2 colors on beat
             let m = (last_beat_num & 1) as u8;
             let n = m.bitxor(1);
-
-            keyboard.set_colors_to(&[
-                0,
-                secondary,
-                primary,
-                //
-                m * primary,
-                n * primary,
-                0,
-                //
-                n * primary,
-                m * primary,
-                0,
-                //
-                0,
-                secondary,
-                primary,
-            ]);
+            
+            #[rustfmt::skip]
+            keyboard.set_colors_to(
+                &[
+                    0          , secondary  , primary, 
+                    m * primary, n * primary, 0      , 
+                    n * primary, m * primary, 0      , 
+                    0          , secondary  , primary, 
+                ]
+            );
 
             info.beat_volume
         });
