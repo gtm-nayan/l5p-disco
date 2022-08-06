@@ -8,7 +8,7 @@ use std::{
 	sync::{atomic::AtomicBool, Arc},
 	time::{Duration, Instant},
 };
-use vol::Volume;
+use vol::EndpointWrapper;
 
 use lenovo_legion_hid::get_keyboard;
 use vis_core::analyzer;
@@ -27,7 +27,7 @@ fn main() {
 	let mut keyboard = get_keyboard(Arc::new(AtomicBool::new(false))).unwrap();
 	keyboard.set_brightness(2);
 
-	let vol = Volume::new().unwrap();
+	let mut vol = EndpointWrapper::new().unwrap();
 
 	let mut frames = {
 		let mut beat = analyzer::BeatBuilder::new().build();
