@@ -1,4 +1,4 @@
-use std::ops::Range;
+use std::ops::{Range, RangeInclusive};
 
 use windows::Win32::{
 	Media::Audio::{
@@ -11,7 +11,7 @@ pub struct Volume {
 	endpoint: IAudioEndpointVolume,
 }
 
-const VOL_RANGE: Range<f32> = f32::MIN_POSITIVE..1.0;
+const VOL_RANGE: RangeInclusive<f32> = f32::MIN_POSITIVE..=1.0;
 
 impl Volume {
 	pub fn new() -> windows::core::Result<Self> {
