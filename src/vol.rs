@@ -41,7 +41,7 @@ impl EndpointWrapper {
 		}?;
 
 		Ok(Self {
-			volume: unsafe { endpoint.GetMasterVolumeLevelScalar() }.map(calc_factor)?,
+			volume: calc_factor(unsafe { endpoint.GetMasterVolumeLevelScalar() }?),
 			rx,
 			_ep: endpoint,
 		})
