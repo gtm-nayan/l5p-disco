@@ -57,11 +57,12 @@ impl EndpointWrapper {
 	}
 }
 
-const VOL_RANGE: RangeInclusive<f32> = f32::MIN_POSITIVE..=1.0;
+const VOL_RANGE: RangeInclusive<f32> = 0.1..=1.0;
 
 fn calc_factor(n: f32) -> f32 {
 	if VOL_RANGE.contains(&n) {
-		20.0 / n.powi(2)
+		// Since the beat_volume will also be reduced by a lower volume, square it to counter that
+		16.0 / n.powi(2)
 	} else {
 		0.0
 	}
