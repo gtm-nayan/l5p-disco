@@ -1,14 +1,18 @@
 #![feature(duration_constants)]
 #![feature(stmt_expr_attributes)]
 
+mod vol;
+
 use std::{
 	ops::BitXor,
 	sync::{atomic::AtomicBool, Arc},
 	time::{Duration, Instant},
 };
+use vol::Volume;
 
 use lenovo_legion_hid::get_keyboard;
 use vis_core::analyzer;
+use windows::Win32::System::Com::CoUninitialize;
 
 #[derive(Debug, Clone)]
 pub struct VisInfo {
@@ -22,6 +26,8 @@ fn main() {
 
 	let mut keyboard = get_keyboard(Arc::new(AtomicBool::new(false))).unwrap();
 	keyboard.set_brightness(2);
+
+	let vol = Volume::new().unwrap();
 
 	let mut frames = {
 		let mut beat = analyzer::BeatBuilder::new().build();
@@ -64,7 +70,7 @@ fn main() {
 
 		beat_rolling = (beat_rolling * 0.95f32).max(base_volume);
 
-		let primary = (beat_rolling * 32.0) as u8;
+		let primary = vol.get_intensity(beat_rolling);
 		let secondary = primary / 2;
 
 		// Alternate zone 1 and 2 colors on beat
@@ -73,16 +79,18 @@ fn main() {
 
 		keyboard.set_colors_to(
 			#[rustfmt::skip]
-            &[
-                0          , secondary  , primary,
-                m * primary, n * primary, 0      ,
-                n * primary, m * primary, 0      ,
-                0          , secondary  , primary,
-            ],
+	        &[
+				0          , secondary  , primary,
+				m * primary, n * primary, 0      ,
+				n * primary, m * primary, 0      ,
+				0          , secondary  , primary,
+			],
 		);
 
 		frame_time
 			.checked_sub(start.elapsed())
 			.map(std::thread::sleep);
 	}
+
+	unsafe { CoUninitialize() };
 }

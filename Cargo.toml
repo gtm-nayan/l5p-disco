@@ -8,7 +8,13 @@ edition = "2021"
 [dependencies]
 lenovo_legion_hid = { path = "libs/lenovo-legion-hid" }
 vis-core = { path = "libs/visualizer2/vis-core" }
-# windows = { version = "0.39.0", features = ["Win32_Media_Audio_Endpoints", "Media_Audio"] }
+windows = { version = "0.39.0", features = [
+    "Win32_Media_Audio_Endpoints",
+    "Win32_System_Com",
+    "Win32_Media_Audio",
+    "Win32_Foundation",
+    "Win32_System_Com_StructuredStorage",
+] }
 
 [profile.release]
 lto = true
