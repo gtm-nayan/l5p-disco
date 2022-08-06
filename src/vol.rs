@@ -10,7 +10,7 @@ use windows::Win32::{
 };
 
 pub struct EndpointWrapper {
-	volume: Volume,
+	volume: f32,
 	endpoint: IAudioEndpointVolume,
 }
 
@@ -32,29 +32,30 @@ impl EndpointWrapper {
 		// 	unsafe { device.Activate(CLSCTX_INPROC_SERVER, std::ptr::null())? };
 
 		Ok(Self {
-			volume: Volume::new(&endpoint),
+			volume: match unsafe { endpoint.GetMasterVolumeLevelScalar() } {
+				Ok(v) if VOL_RANGE.contains(&v) => 20.0 / v,
+				_ => 0.0,
+			},
 			endpoint,
 		})
 	}
 
 	pub fn get_intensity(&self, beat_volume: f32) -> u8 {
-		(self.volume.0 * beat_volume) as u8
+		(self.volume * beat_volume) as u8
 	}
 }
 
 const VOL_RANGE: RangeInclusive<f32> = f32::MIN_POSITIVE..=1.0;
 
-struct Volume(f32);
+#[windows::implement(IAudioEndpointVolumeCallback)]
+#[allow(non_snake_case)]
+struct VolumeUpdateCallback {
+	pub yeti_hid: Box<EndpointWrapper>,
+}
 
-impl Volume {
-	pub fn new(endpoint: &IAudioEndpointVolume) -> Self {
-		let new = Volume(match unsafe { endpoint.GetMasterVolumeLevelScalar() } {
-			Ok(v) if VOL_RANGE.contains(&v) => 20.0 / v,
-			_ => 0.0,
-		});
-
-		new
+#[allow(non_snake_case)]
+impl VolumeUpdateCallback {
+	fn OnNotify(&self, pnotify: *mut AUDIO_VOLUME_NOTIFICATION_DATA) -> windows::core::Result<()> {
+		Ok(())
 	}
-
-	
 }
