@@ -12,7 +12,6 @@ use vol::EndpointWrapper;
 
 use lenovo_legion_hid::get_keyboard;
 use vis_core::analyzer;
-use windows::Win32::System::Com::CoUninitialize;
 
 #[derive(Debug, Clone)]
 pub struct VisInfo {
@@ -27,7 +26,7 @@ fn main() {
 	let mut keyboard = get_keyboard(Arc::new(AtomicBool::new(false))).unwrap();
 	keyboard.set_brightness(2);
 
-	let mut vol = EndpointWrapper::new().unwrap();
+	let vol = EndpointWrapper::new().unwrap();
 
 	let mut frames = {
 		let mut beat = analyzer::BeatBuilder::new().build();
@@ -39,7 +38,7 @@ fn main() {
 				beat_volume: 0.0,
 			},
 			move |info, samples| {
-				if beat.detect(&samples) {
+				if beat.detect(samples) {
 					beat_num += 1;
 				}
 				info.beat = beat_num;
@@ -55,18 +54,11 @@ fn main() {
 	let frame_time = Duration::SECOND / 30;
 
 	let mut beat_rolling = 0.0;
-	let mut last_beat_num = 0;
 
 	for frame in frames.iter() {
 		let start = Instant::now();
 
-		let base_volume = frame.info(|info| {
-			if info.beat != last_beat_num {
-				last_beat_num = info.beat;
-			}
-
-			info.beat_volume
-		});
+		let (base_volume, beat_num) = frame.info(|info| (info.beat_volume, info.beat));
 
 		beat_rolling = (beat_rolling * 0.95f32).max(base_volume);
 
@@ -74,7 +66,7 @@ fn main() {
 		let secondary = primary / 2;
 
 		// Alternate zone 1 and 2 colors on beat
-		let m = (last_beat_num & 1) as u8;
+		let m = (beat_num & 1) as u8;
 		let n = m.bitxor(1);
 
 		keyboard.set_colors_to(
@@ -87,10 +79,8 @@ fn main() {
 			],
 		);
 
-		frame_time
-			.checked_sub(start.elapsed())
-			.map(std::thread::sleep);
+		if let Some(time) = frame_time.checked_sub(start.elapsed()) {
+			std::thread::sleep(time);
+		}
 	}
-
-	unsafe { CoUninitialize() };
 }
