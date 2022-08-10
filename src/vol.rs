@@ -1,7 +1,4 @@
-use std::{
-	cell::UnsafeCell,
-	ops::{Mul, RangeInclusive},
-};
+use std::{cell::UnsafeCell, ops::RangeInclusive};
 
 use windows::Win32::{
 	Media::Audio::{
