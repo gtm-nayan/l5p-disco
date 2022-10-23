@@ -28,7 +28,6 @@ struct Callback(*mut f32);
 #[allow(non_snake_case)]
 impl IAudioEndpointVolumeCallback_Impl for Callback {
 	fn OnNotify(&self, pnotify: *mut AUDIO_VOLUME_NOTIFICATION_DATA) -> windows::core::Result<()> {
-		// SAFETY: EndpointWrapper's UnsafeCell is dropped after Callback
 		unsafe { *self.0 = calc_factor((*pnotify).fMasterVolume) };
 		Ok(())
 	}
