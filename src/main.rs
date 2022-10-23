@@ -1,32 +1,82 @@
 #![feature(duration_constants)]
 #![feature(stmt_expr_attributes)]
 
-mod vol;
+use windows::Win32::{
+	Media::Audio::{
+		eConsole, eRender,
+		Endpoints::{
+			IAudioEndpointVolume, IAudioEndpointVolumeCallback, IAudioEndpointVolumeCallback_Impl,
+		},
+		IMMDeviceEnumerator, MMDeviceEnumerator, AUDIO_VOLUME_NOTIFICATION_DATA,
+	},
+	System::Com::{CoCreateInstance, CoInitialize, CLSCTX_INPROC_SERVER},
+};
 
+use lenovo_legion_hid::get_keyboard;
 use std::{
-	ops::BitXor,
+	cell::UnsafeCell,
+	ops::{BitXor, Mul, RangeInclusive},
 	sync::{atomic::AtomicBool, Arc},
 	time::{Duration, Instant},
 };
-use vol::EndpointWrapper;
-
-use lenovo_legion_hid::get_keyboard;
 use vis_core::analyzer;
 
+#[allow(non_snake_case)]
+#[windows::core::implement(IAudioEndpointVolumeCallback)]
+struct Callback(*mut f32);
+
+#[allow(non_snake_case)]
+impl IAudioEndpointVolumeCallback_Impl for Callback {
+	fn OnNotify(&self, pnotify: *mut AUDIO_VOLUME_NOTIFICATION_DATA) -> windows::core::Result<()> {
+		// SAFETY: EndpointWrapper's UnsafeCell is dropped after Callback
+		unsafe { *self.0 = calc_factor((*pnotify).fMasterVolume) };
+		Ok(())
+	}
+}
+
+const VOL_RANGE: RangeInclusive<f32> = 0.1..=1.0;
+
+fn calc_factor(n: f32) -> f32 {
+	if VOL_RANGE.contains(&n) {
+		// Since the beat_volume will also be reduced by a lower volume, square it to counter that
+		dbg!(12.0 / n.powi(2))
+	} else {
+		0.0
+	}
+}
+
 #[derive(Debug, Clone)]
-pub struct VisInfo {
+struct VisInfo {
 	beat: u64,
 	beat_volume: f32,
 }
 
-fn main() {
+fn main() -> windows::core::Result<()> {
 	vis_core::default_config();
 	vis_core::default_log();
 
+	let mut volume = UnsafeCell::new(0.0);
+
+	let (_, _) = unsafe {
+		CoInitialize(std::ptr::null())?;
+
+		let endpoint: IAudioEndpointVolume = CoCreateInstance::<_, IMMDeviceEnumerator>(
+			&MMDeviceEnumerator,
+			None,
+			CLSCTX_INPROC_SERVER,
+		)?
+		.GetDefaultAudioEndpoint(eRender, eConsole)?
+		.Activate(CLSCTX_INPROC_SERVER, std::ptr::null())?;
+
+		let volume_ptr = volume.get();
+		*volume_ptr = calc_factor(endpoint.GetMasterVolumeLevelScalar()?);
+		let handle = Callback(volume_ptr).into();
+		endpoint.RegisterControlChangeNotify(&handle)?;
+		(endpoint, handle)
+	};
+
 	let mut keyboard = get_keyboard(Arc::new(AtomicBool::new(false))).unwrap();
 	keyboard.set_brightness(2);
-
-	let vol = EndpointWrapper::new().unwrap();
 
 	let mut frames = {
 		let mut beat = analyzer::BeatBuilder::new().build();
@@ -62,7 +112,7 @@ fn main() {
 
 		beat_rolling = (beat_rolling * 0.95f32).max(base_volume);
 
-		let primary = vol.get_intensity(beat_rolling);
+		let primary = volume.get_mut().mul(beat_rolling) as u8;
 		let secondary = primary / 2;
 
 		// Alternate zone 1 and 2 colors on beat
@@ -83,4 +133,5 @@ fn main() {
 			std::thread::sleep(time);
 		}
 	}
+	Ok(())
 }
