@@ -15,7 +15,7 @@ use windows::Win32::{
 use lenovo_legion_hid::get_keyboard;
 use std::{
 	cell::UnsafeCell,
-	ops::{BitXor, Mul, RangeInclusive},
+	ops::{Mul, RangeInclusive},
 	sync::{atomic::AtomicBool, Arc},
 	time::{Duration, Instant},
 };
@@ -56,6 +56,7 @@ fn main() -> windows::core::Result<()> {
 
 	let mut volume = UnsafeCell::new(0.0);
 
+	// Prevent dropping endpoint and callback handle otherwise it's not called
 	let (_, _) = unsafe {
 		CoInitialize(std::ptr::null())?;
 
@@ -115,16 +116,19 @@ fn main() -> windows::core::Result<()> {
 		let secondary = primary / 2;
 
 		// Alternate zone 1 and 2 colors on beat
-		let m = (beat_num & 1) as u8;
-		let n = m.bitxor(1);
+		let (m, n) = if beat_num % 2 == 0 {
+			(primary, 0)
+		} else {
+			(0, primary)
+		};
 
 		keyboard.set_colors_to(
 			#[rustfmt::skip]
 	        &[
-				0          , secondary  , primary,
-				m * primary, n * primary, 0      ,
-				n * primary, m * primary, 0      ,
-				0          , secondary  , primary,
+				0, secondary, primary,
+				m, n        , 0      ,
+				n, m        , 0      ,
+				0, secondary, primary,
 			],
 		);
 
