@@ -9,7 +9,7 @@ use windows::Win32::{
 		},
 		IMMDeviceEnumerator, MMDeviceEnumerator, AUDIO_VOLUME_NOTIFICATION_DATA,
 	},
-	System::Com::{CoCreateInstance, CoInitialize, CLSCTX_INPROC_SERVER},
+	System::Com::{CoCreateInstance, CoInitialize, CoUninitialize, CLSCTX_INPROC_SERVER},
 };
 
 use lenovo_legion_hid::get_keyboard;
@@ -57,7 +57,7 @@ fn main() -> windows::core::Result<()> {
 	let mut volume = UnsafeCell::new(0.0);
 
 	// Prevent dropping endpoint and callback handle otherwise it's not called
-	let (_, _) = unsafe {
+	let _callback_handle = unsafe {
 		CoInitialize(std::ptr::null())?;
 
 		let endpoint: IAudioEndpointVolume = CoCreateInstance::<_, IMMDeviceEnumerator>(
