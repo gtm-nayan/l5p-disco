@@ -9,7 +9,7 @@ use windows::Win32::{
 		},
 		IMMDeviceEnumerator, MMDeviceEnumerator, AUDIO_VOLUME_NOTIFICATION_DATA,
 	},
-	System::Com::{CoCreateInstance, CoInitialize, CoUninitialize, CLSCTX_INPROC_SERVER},
+	System::Com::{CoCreateInstance, CoInitialize, CLSCTX_INPROC_SERVER},
 };
 
 use lenovo_legion_hid::get_keyboard;
@@ -38,7 +38,7 @@ const VOL_RANGE: RangeInclusive<f32> = 0.1..=1.0;
 fn calc_factor(n: f32) -> f32 {
 	if VOL_RANGE.contains(&n) {
 		// Since the beat_volume will also be reduced by a lower volume, square it to counter that
-		dbg!(12.0 / n.powi(2))
+		dbg!(16.0 / n.powi(2))
 	} else {
 		0.0
 	}
