@@ -5,5 +5,7 @@ rate = 8000
 read_size = 256
 recorder = "cpal"
 
+beat.decay = 1000
+
 [rgb]
 fps = 30
