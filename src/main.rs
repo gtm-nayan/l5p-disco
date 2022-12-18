@@ -16,7 +16,6 @@ use lenovo_legion_hid::get_keyboard;
 use std::{
 	cell::UnsafeCell,
 	ops::{Mul, RangeInclusive},
-	sync::{atomic::AtomicBool, Arc},
 	time::{Duration, Instant},
 };
 use vis_core::analyzer;
@@ -38,7 +37,7 @@ const VOL_RANGE: RangeInclusive<f32> = 0.1..=1.0;
 fn calc_factor(n: f32) -> f32 {
 	if VOL_RANGE.contains(&n) {
 		// Since the beat_volume will also be reduced by a lower volume, square it to counter that
-		dbg!(16.0 / n.powi(2))
+		dbg!(32.0 / n.powi(2))
 	} else {
 		0.0
 	}
@@ -75,7 +74,7 @@ fn main() -> windows::core::Result<()> {
 		(endpoint, handle)
 	};
 
-	let mut keyboard = get_keyboard(Arc::new(AtomicBool::new(false))).unwrap();
+	let mut keyboard = get_keyboard().unwrap();
 	keyboard.set_brightness(2);
 
 	let mut frames = {
@@ -110,7 +109,7 @@ fn main() -> windows::core::Result<()> {
 
 		let (base_volume, beat_num) = frame.info(|info| (info.beat_volume, info.beat));
 
-		beat_rolling = (beat_rolling * 0.95f32).max(base_volume);
+		beat_rolling = (beat_rolling * 0.9f32).max(base_volume);
 
 		let primary = volume.get_mut().mul(beat_rolling) as u8;
 		let secondary = primary / 2;
