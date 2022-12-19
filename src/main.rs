@@ -16,7 +16,6 @@ use lenovo_legion_hid::get_keyboard;
 use std::{
 	cell::UnsafeCell,
 	ops::{Mul, RangeInclusive},
-	time::{Duration, Instant},
 };
 use vis_core::analyzer;
 
@@ -96,29 +95,29 @@ fn main() -> windows::core::Result<()> {
 				info
 			},
 		)
-		.async_analyzer(300)
 		.frames()
 	};
 
-	let frame_time = Duration::SECOND / 30;
-
-	let mut beat_rolling = 0.0;
+	let mut beat_rolling = 0.0f32;
 
 	for frame in frames.iter() {
-		let start = Instant::now();
-
 		let (base_volume, beat_num) = frame.info(|info| (info.beat_volume, info.beat));
 
-		beat_rolling = (beat_rolling * 0.9f32).max(base_volume);
+		beat_rolling = (beat_rolling * 0.995).max(base_volume);
 
 		let primary = volume.get_mut().mul(beat_rolling) as u8;
-		let secondary = primary / 2;
 
 		// Alternate zone 1 and 2 colors on beat
 		let (m, n) = if beat_num % 2 == 0 {
 			(primary, 0)
 		} else {
 			(0, primary)
+		};
+
+		let (primary, secondary) = if primary > 75 {
+			(primary << 1, primary)
+		} else {
+			(0, 0)
 		};
 
 		keyboard.set_colors_to(
@@ -130,10 +129,6 @@ fn main() -> windows::core::Result<()> {
 				0, secondary, primary,
 			],
 		);
-
-		if let Some(time) = frame_time.checked_sub(start.elapsed()) {
-			std::thread::sleep(time);
-		}
 	}
 	Ok(())
 }
